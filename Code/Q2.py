@@ -22,13 +22,17 @@ import matplotlib.pyplot as plt
 
 def get_data_points():
 
-    video = cv2.VideoCapture("../Videos/ball_video1.mp4") 
+    video = cv2.VideoCapture("./Videos/ball_video1.mp4") 
 
     currentframe = 0
     frames = list() # Frames
     x_coords = list() # X Coordinates of center of the ball in Image plane
     y_coords = list() # Y Coordinates of center of the ball in Image plane
     ret = True
+
+    X = np.empty([0,3])
+    Y = np.empty([0,1])
+    a = np.empty([3,1])
 
     while(ret): 
 
@@ -57,30 +61,42 @@ def get_data_points():
 
         test = np.array(np.where(full_mask == 255))
 
-        print(full_mask.shape)
-        print(test.shape)
-        print(test[0].argmax(), test[1].argmax())
-        print(test[0].argmin(), test[1].argmin())
-        print(test[0][test[0].argmax()], test[1][test[1].argmax()])
-        print(test[0][test[0].argmin()], test[1][test[1].argmin()])
+        # print(full_mask.shape)
+        # print(test.shape)
+        # print(test[0].argmax(), test[1].argmax())
+        # print(test[0].argmin(), test[1].argmin())
+        # print(test[0][test[0].argmax()], test[1][test[1].argmax()])
+        # print(test[0][test[0].argmin()], test[1][test[1].argmin()])
 
         x = test[1][test[1].argmin()] + (test[1][test[1].argmax()] - test[1][test[1].argmin()])/2 # X/columns axis in Image plane, Y/rows in a matrix
         y = test[0][test[0].argmin()] + (test[0][test[0].argmax()] - test[0][test[0].argmin()])/2 # Y/rows axis in Image plane, X/columns in a matrix
 
-        print(x, y)
+        # print(x, y)
 
         full_mask = cv2.circle(frame, (int(x), int(y)), 2, (255,0,0), -1)
         
         x_coords.append(x)
         y_coords.append(y)
 
+        # print(x**2, x, y)
+        X = np.insert(X, len(X), np.array([x**2, x, 1]), axis=0)
+        Y = np.insert(Y, len(Y), y, axis=0)
+        # print(X.shape, Y.shape)
+
         cv2.imshow("Frame", frame)
         cv2.imshow("Gray Frame", full_mask)
         cv2.imshow("HSV Frame", hsv_frame)
         cv2.waitKey(1)
 
+    a = np.matmul(np.matmul(np.linalg.inv(np.matmul(X.transpose(), X)), X.transpose()), Y)
+    print(a)
+
+    x_coords_sq = [x**2 for x in x_coords]
+    p = a[0]*x_coords_sq + a[1]*x_coords + a[2]
+
     fig = plt.figure()
     plt.scatter(x_coords, y_coords, linewidths=0.2)
+    plt.plot(x_coords, p)
     plt.show()
 
     video.release() 
