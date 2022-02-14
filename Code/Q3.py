@@ -102,22 +102,21 @@ def linear_least_squares(data):
 
 def total_least_squares(data):
 
-    # Equation of line: ax + by + c = 0
+    # Equation of line: ax + by - d = 0
+    # Matrix U = [x_i - x_mean, y_i - y_mean]
+    # Matrix N = [a b]
     # print(data)
-    X = np.array([[data[0][i], data[1][i]] for i in range(len(data[0]))])
-    # a = np.empty([3,1])
-    # print(X)
+    x_mean = np.mean(data[0])
+    y_mean = np.mean(data[1])
+    print(y_mean)
+    A = np.array([[data[0][i] - x_mean, data[1][i] - y_mean] for i in range(len(data[0]))])
 
-    U, Sigma, V = SVD(np.matmul(X.transpose(), X))
-    u, sigma, v = np.linalg.svd(X)
-    print(V)
-    print(v)
+    # U, Sigma, V = SVD(np.matmul(X.transpose(), X))
+    u, sigma, V = np.linalg.svd(np.matmul(X.transpose(), X))
     a = (V[:, -1]).reshape((2,1))
-    print(a)
+    d = a[0]*x_mean + a[1]*y_mean
 
-    # y = a[0]*data[0]+a[1]*data[1]
-    # x = a[0]*data[0]
-    y = (1 - 1*data[0])/1
+    y = (d - a[0]*data[0])/a[1]
 
     fig = plt.figure()
     plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
