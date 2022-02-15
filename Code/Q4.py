@@ -27,44 +27,39 @@ def SVD(A):
     AAT = np.matmul(A, A.transpose())
 
     eig_vals, eig_vecs = np.linalg.eig(AAT)
-    eigs = {eig_vals[i]: eig_vecs[:,i] for i in range(len(eig_vals))}
-    eigs = {eig_val: eig_vec for eig_val, eig_vec in sorted(eigs.items(), reverse=True)}
+    idx = eig_vals.argsort()[::-1]
+    eig_vals = eig_vals[idx]
+    eig_vecs = eig_vecs[:, idx]
 
-    U = np.array([eig_vec for eig_vec in eigs.values()])
-    print(U)
-
-    idx1 = np.flip(np.argsort(eig_vals))
-    eig_vals = eig_vals[idx1]
-    U = eig_vecs[:, idx1]
-    print(U)
+    U = eig_vecs
+    # print(U)
 
     # Computing Sigma
-    Sigma = np.zeros([len(eig_vals), len(eig_vals)+1])
-    for i, eig_val in enumerate(eigs):
-        Sigma[i][i] = np.sqrt(eig_val)
+    eig_vals = eig_vals[np.where(eig_vals > 0)]
+    eig_vals = np.sqrt(eig_vals)
+    Sigma = np.zeros(A.shape)
+    np.fill_diagonal(Sigma, eig_vals)
     # print(Sigma)
 
     # Computing V matrix
     ATA = np.matmul(A.transpose(), A)
 
     eig_vals, eig_vecs = np.linalg.eig(ATA)
-    eigs = {eig_vals[i]: eig_vecs[:,i] for i in range(len(eig_vals))}
-    eigs = {eig_val: eig_vec for eig_val, eig_vec in sorted(eigs.items(), reverse=True)}
+    idx = eig_vals.argsort()[::-1]
+    eig_vals = eig_vals[idx]
+    eig_vecs = eig_vecs[:, idx]
 
-    V = np.array([eig_vec for eig_vec in eigs.values()])
-    idx1 = np.flip(np.argsort(eig_vals))
-    eig_vals = eig_vals[idx1]
-    V = eig_vecs[:, idx1]
-    print(V)
+    V = eig_vecs
+    # print(V)
 
-    print(U.shape, Sigma.shape, V.shape)
+    # print(U.shape, Sigma.shape, V.shape)
     # print((V[-1]/V[-1, -1]).reshape((3,3)))
 
-    return U, Sigma, V
+    return U, Sigma, V.transpose()
 
 
 def HomographyMatrix(V):
-    return (V[-1]/V[-1, -1]).reshape((3,3))
+    return (V[:,-1]/V[:,-1,][-1]).reshape((3,3))
 
 
 def main():
@@ -83,11 +78,8 @@ def main():
                   [-x[3], -y[3], -1, 0, 0, 0, x[3]*xp[3], y[3]*xp[3], xp[3]],
                   [0, 0, 0, -x[3], -y[3], -1, x[3]*yp[3], y[3]*yp[3], yp[3]]])
     
+    print("Computing SVD...")
     U, Sigma, V = SVD(A)
-    print(V)
-
-    u, s, v = np.linalg.svd(A)
-    print(v)
 
     H = HomographyMatrix(V)
     print("Homography Matrix:\n", H)

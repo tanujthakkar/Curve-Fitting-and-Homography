@@ -49,26 +49,30 @@ def SVD(A):
     AAT = np.matmul(A, A.transpose())
 
     eig_vals, eig_vecs = np.linalg.eig(AAT)
-    eigs = {eig_vals[i]: eig_vecs[:,i] for i in range(len(eig_vals))}
-    eigs = {eig_val: eig_vec for eig_val, eig_vec in sorted(eigs.items(), reverse=True)}
-    
-    U = np.array([eig_vec for eig_vec in eigs.values()])
+    idx = eig_vals.argsort()[::-1]
+    eig_vals = eig_vals[idx]
+    eig_vecs = eig_vecs[:, idx]
+
+    U = eig_vecs
     # print(U)
 
     # Computing Sigma
-    Sigma = np.zeros([len(eig_vals), len(eig_vals)+1])
-    for i, eig_val in enumerate(eigs):
-        Sigma[i][i] = np.sqrt(abs(eig_val))
+    eig_vals = eig_vals[np.where(eig_vals > 0)]
+    eig_vals = np.sqrt(eig_vals)
+    Sigma = np.zeros(A.shape)
+    np.fill_diagonal(Sigma, eig_vals)
     # print(Sigma)
 
     # Computing V matrix
     ATA = np.matmul(A.transpose(), A)
 
     eig_vals, eig_vecs = np.linalg.eig(ATA)
-    eigs = {eig_vals[i]: eig_vecs[:,i] for i in range(len(eig_vals))}
-    eigs = {eig_val: eig_vec for eig_val, eig_vec in sorted(eigs.items(), reverse=True)}
+    idx = eig_vals.argsort()[::-1]
+    eig_vals = eig_vals[idx]
+    eig_vecs = eig_vecs[:, idx]
 
-    V = np.array([eig_vec for eig_vec in eigs.values()])
+    V = eig_vecs
+    # print(V)
 
     # print(U.shape, Sigma.shape, V.shape)
     # print((V[-1]/V[-1, -1]).reshape((3,3)))
@@ -76,7 +80,10 @@ def SVD(A):
     return U, Sigma, V
 
 
-def linear_least_squares(data):
+def linear_least_squares(data, Visualize=False):
+
+    if(Visualize):
+        print("Applying Linear Least Squares...")
 
     # Equation of line: y = mx + x
     # print(data[1])
@@ -87,21 +94,20 @@ def linear_least_squares(data):
     a = np.matmul(np.matmul(np.linalg.pinv(np.matmul(X.transpose(), X)), X.transpose()), Y)
     # print(a)
 
-    c = a[0]*data[0] + a[1]
+    y = a[0]*data[0] + a[1]
 
     # origin = [0, 0]
 
-    # fig = plt.figure()
-    # plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
-    # plt.plot(data[0], c, 'red')
-    # plt.quiver(*origin, *eig_vecs[:,0], color=['r'], scale=21)
-    # plt.quiver(*origin, *eig_vecs[1], color=['b'], scale=21)
-    # plt.show()
+    if(Visualize):
+        fig = plt.figure()
+        plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
+        plt.plot(data[0], y, 'red')
+        plt.show()
 
-    return a, c
+    return a, y
 
 
-def total_least_squares(data):
+def total_least_squares(data, Visualize=False):
 
     print("Applying Total Least Squares...")
 
@@ -114,24 +120,23 @@ def total_least_squares(data):
 
     X = np.array([[data[0][i] - x_mean, data[1][i] - y_mean] for i in range(len(data[0]))])
 
-    # U, Sigma, V = SVD(np.matmul(X.transpose(), X))
-    # print(V)
-    u, sigma, V = np.linalg.svd(np.matmul(X.transpose(), X))
-    # print(V)
+    U, Sigma, V = SVD(np.matmul(X.transpose(), X))
+
     a = (V[:, -1]).reshape((2,1))
     d = a[0]*x_mean + a[1]*y_mean
     # print(a, d)
     y = (d - a[0]*data[0])/a[1]
 
-    # fig = plt.figure()
-    # plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
-    # plt.plot(data[0], y, 'red')
-    # plt.show()
+    if(Visualize):
+        fig = plt.figure()
+        plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
+        plt.plot(data[0], y, 'red')
+        plt.show()
 
     return a, y
 
 
-def RANSAC(data):
+def RANSAC(data, Visualize=False):
 
     print("Applying RANSAC...")
 
@@ -174,10 +179,14 @@ def RANSAC(data):
             # print(max_inliers)
     
     print("Max Inliers: %d"%max_inliers)
-    fig = plt.figure()
-    plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
-    plt.plot(data[0], best_Y, 'red')
-    plt.show()
+
+    if(Visualize):
+        fig = plt.figure()
+        plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
+        plt.plot(data[0], best_Y, 'red')
+        plt.show()
+
+    return best_a, best_Y
 
 
 def main():
@@ -191,12 +200,19 @@ def main():
     data[0] = (data[0] - data[0].min())/(data[0].max() - data[0].min())
     data[1] = (data[1] - data[1].min())/(data[1].max() - data[1].min())
 
-    # linear_least_squares(data)
+    a, LLS_Y = linear_least_squares(data, False)
     
-    # total_least_squares(data)
+    a, TLS_Y = total_least_squares(data, False)
 
-    RANSAC(data)
+    a, RNS_Y = RANSAC(data, False)
 
+    fig = plt.figure()
+    plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
+    plt.plot(data[0], LLS_Y, 'red')
+    plt.plot(data[0], TLS_Y, 'blue')
+    plt.plot(data[0], RNS_Y, 'orange')
+    plt.legend(["Data", "Linear Least Squares", "Total Least Squares", "RANSAC"])
+    plt.show()
 
 
 if __name__ == '__main__':
