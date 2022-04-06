@@ -96,7 +96,7 @@ def get_data_points(VideoPath):
 
 def main():
     Parser = argparse.ArgumentParser()
-    Parser.add_argument('--VideoPath', type=str, default="./Videos/ball_video2.mp4", help='Select model')
+    Parser.add_argument('--VideoPath', type=str, default="./Videos/ball_video1.mp4", help='Path to the video file')
     
     Args = Parser.parse_args()
     VideoPath = Args.VideoPath

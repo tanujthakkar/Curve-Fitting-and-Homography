@@ -85,7 +85,7 @@ def linear_least_squares(data, Visualize=False):
     if(Visualize):
         print("Applying Linear Least Squares...")
 
-    # Equation of line: y = mx + x
+    # Equation of line: y = mx + c
     # print(data[1])
     X = np.array([[x, 1] for x in data[0]])
     Y = np.array([y for y in data[1]])
@@ -200,18 +200,23 @@ def main():
     data[0] = (data[0] - data[0].min())/(data[0].max() - data[0].min())
     data[1] = (data[1] - data[1].min())/(data[1].max() - data[1].min())
 
+    print("Applying Linear Least Squares...")
     a, LLS_Y = linear_least_squares(data, False)
     
     a, TLS_Y = total_least_squares(data, False)
 
     a, RNS_Y = RANSAC(data, False)
 
+    origin = [np.mean(data[0]), np.mean(data[1])]
+
     fig = plt.figure()
     plt.scatter(data[0], data[1], marker='.', linewidths=0.01)
     plt.plot(data[0], LLS_Y, 'red')
     plt.plot(data[0], TLS_Y, 'blue')
     plt.plot(data[0], RNS_Y, 'orange')
-    plt.legend(["Data", "Linear Least Squares", "Total Least Squares", "RANSAC"])
+    plt.quiver(*origin, *eig_vecs[:,0], color=['gray'], scale=10)
+    plt.quiver(*origin, *eig_vecs[1], color=['gray'], scale=10)
+    plt.legend(["Data", "Linear Least Squares", "Total Least Squares", "RANSAC", "Eigen Vectors of Covariance Mat"])
     plt.show()
 
 
